@@ -27,6 +27,7 @@ all_data = pandas.DataFrame()
 
 num_readings = 0
 num_outliers = 0
+max_altitude = 5
 for filename in filenames:
     flight_data = pandas.read_csv(filename)
 
@@ -47,6 +48,8 @@ for filename in filenames:
     # landing_trajectory = landing_trajectory.where(numpy.abs(landing_trajectory["apriltag_estimate_position_x"] - 0) < 5)
     # landing_trajectory = landing_trajectory.where(numpy.abs(landing_trajectory["apriltag_estimate_position_y"] - 50) < 5)
     # landing_trajectory = landing_trajectory.where(numpy.abs(landing_trajectory["apriltag_estimate_position_z"] - 0) < 5)
+    landing_trajectory = landing_trajectory.where(landing_trajectory["iris_position_z"] < max_altitude)
+    # landing_trajectory.drop(landing_trajectory.where(landing_trajectory["iris_position_z"] > max_altitude).index)
 
     landing_trajectory["iris_angular_velocity_magnitude"] = numpy.sqrt(landing_trajectory.iris_angular_velocity_x ** 2 + landing_trajectory.iris_angular_velocity_y ** 2 + landing_trajectory.iris_angular_velocity_z ** 2)
     landing_trajectory["camera_angular_velocity_magnitude"] = numpy.sqrt(landing_trajectory.camera_angular_velocity_x ** 2 + landing_trajectory.camera_angular_velocity_y ** 2 + landing_trajectory.camera_angular_velocity_z ** 2)
@@ -60,20 +63,23 @@ for filename in filenames:
     apriltag_error_vs_camera_angular_velocity_axes.scatter(landing_trajectory["camera_angular_velocity_magnitude"], landing_trajectory["apriltag_estimate_error"])
     apriltag_error_vs_camera_angular_acceleration_axes.scatter(landing_trajectory["camera_angular_acceleration_magnitude"], landing_trajectory["apriltag_estimate_error"])
     # apriltag_error_vs_camera_jerk_acceleration_axes.scatter(landing_trajectory["camera_angular_jerk_magnitude"], landing_trajectory["apriltag_estimate_error"])
-    temp_ax.scatter(landing_trajectory["iris_linear_velocity_x"], landing_trajectory["apriltag_estimate_error"])
-    temp_ax.set_title("Iris linear velocity (E) vs apriltag pose estimate error")
+    temp_ax.scatter(landing_trajectory["iris_position_z"], landing_trajectory["apriltag_estimate_error"].where(landing_trajectory.apriltag_estimate_error < 1.1))
+    temp_ax.set_title("Iris altitude vs apriltag pose estimate error")
+    # temp_ax.set_xlim(0, 10)
 
     num_readings += len(landing_trajectory)
-    all_data = pandas.concat([all_data, landing_trajectory])
-
-print(all_data.head())
+    all_data = pandas.concat([all_data, landing_trajectory.where(landing_trajectory["iris_position_z"] < max_altitude)])
 
 print("pose estimate average:\n%0.4f & %0.4f & %0.4f" % (numpy.nanmean(all_data["apriltag_estimate_position_x"]), numpy.nanmean(all_data["apriltag_estimate_position_y"]), numpy.nanmean(all_data["apriltag_estimate_position_z"])) )
 print("pose estimate var:\n%0.4f & %0.4f & %0.4f" % (numpy.nanvar(all_data["apriltag_estimate_position_x"]), numpy.nanvar(all_data["apriltag_estimate_position_y"]), numpy.nanvar(all_data["apriltag_estimate_position_z"])) )
-print("pose estimate std:\n%0.4f & %0.4f & %0.4f" % (numpy.sqrt(numpy.nanvar(all_data["apriltag_estimate_position_x"])), numpy.sqrt(numpy.nanvar(all_data["apriltag_estimate_position_y"])), numpy.sqrt(numpy.nanvar(all_data["apriltag_estimate_position_z"]))) )
+print("pose estimate stddev:\n%0.4f & %0.4f & %0.4f" % (numpy.sqrt(numpy.nanvar(all_data["apriltag_estimate_position_x"])), numpy.sqrt(numpy.nanvar(all_data["apriltag_estimate_position_y"])), numpy.sqrt(numpy.nanvar(all_data["apriltag_estimate_position_z"]))) )
 
-print("number of pose estimates: %s" % len(all_data))
+print("number of pose estimates: %s" % len(all_data.where(all_data.iris_position_z < max_altitude)))
+# print(num_readings)
 # print("number of outliers: %s" % len())
+
+temp_ax.set_xlabel("Iris altitude (m)")
+temp_ax.set_ylabel("Estimate error magnitude (m)")
 
 apriltag_pose_estimate_axes.set_title("April Tag Pose Estimation")
 apriltag_pose_estimate_axes.set_xlabel("x (east)")
