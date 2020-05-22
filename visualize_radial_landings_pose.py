@@ -9,7 +9,7 @@ from matplotlib.cbook import get_sample_data
 from matplotlib._png import read_png
 
 # get all logs
-log_directory = "/home/joshua/Documents/radial_land_testing (better)/*.csv"
+log_directory = "/home/joshua/Documents/radial_land_testing/*.csv"
 filenames = glob.glob(log_directory)
 
 print(filenames)
@@ -37,7 +37,6 @@ axes.plot_surface(x, y, 0, rstride=5, cstride=5, facecolors=img)
 colors = ["black", "purple", "blue", "green", "yellow", "red"]
 
 times = []
-energies = []
 descent_edges = []
 
 for filename in filenames:
@@ -51,12 +50,15 @@ for filename in filenames:
 
     # print(landing_trajectory.head())
 
-    axes.plot(landing_trajectory["landing_pad_position_y"] - landing_trajectory["iris_position_y"],
-              landing_trajectory["landing_pad_position_x"] - landing_trajectory["iris_position_x"],
-              landing_trajectory["iris_position_z"] - landing_trajectory["landing_pad_position_z"])
+    start = 10
+    axes.plot(landing_trajectory["landing_pad_relative_x"].iloc[start:],
+              landing_trajectory["landing_pad_relative_y"].iloc[start:],
+              - landing_trajectory["landing_pad_relative_z"].iloc[start:])
 
-    times.append(landing_trajectory.time.iloc[-1] - landing_trajectory.time.iloc[0])
-    energies.append(landing_trajectory.energy_consumed.iloc[-1] - landing_trajectory.energy_consumed.iloc[0])
+    start_time = 0
+    end_time   = 0
+
+
 
     # for i in range(5):
     #
@@ -70,6 +72,8 @@ for filename in filenames:
         # elif( i == 0 ):
         #     end_time = segment.iloc[0].time
 
+    times.append(end_time - start_time)
+
     axes.view_init(elev=30, azim=40)
     axes.set_xlabel("East")
     axes.set_ylabel("North")
@@ -78,8 +82,7 @@ for filename in filenames:
     axes.set_xlim3d(-20, 20)
     axes.set_ylim3d(-20, 20)
 
-# plt.savefig("/home/joshua/Documents/radial_land_testing/figure.png", bbox_inches="tight", pad_inches=-0.2, transparent=True)
+plt.savefig("/home/joshua/Documents/radial_land_testing/figure_estimate.png", bbox_inches="tight", pad_inches=-0.2, transparent=True)
 # plt.show()
 
-print(numpy.mean(times))
-print(numpy.mean(energies))
+print(times)

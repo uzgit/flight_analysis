@@ -9,7 +9,7 @@ from matplotlib.cbook import get_sample_data
 from matplotlib._png import read_png
 
 # get all logs
-log_directory = "/home/joshua/Documents/radial_land_testing (better)/*.csv"
+log_directory = "/home/joshua/Documents/moving_land_testing/*.csv"
 filenames = glob.glob(log_directory)
 
 print(filenames)
@@ -32,13 +32,15 @@ x = x.astype(float) / 225.0 - 0.5
 y = y.astype(float) / 225.0 - 0.5
 
 # ax = gca(projection='3d')
-axes.plot_surface(x, y, 0, rstride=5, cstride=5, facecolors=img)
+# axes.plot_surface(x, y, 0, rstride=5, cstride=5, facecolors=img)
 
 colors = ["black", "purple", "blue", "green", "yellow", "red"]
 
 times = []
 energies = []
 descent_edges = []
+
+distances = []
 
 for filename in filenames:
     # import flight data
@@ -51,9 +53,11 @@ for filename in filenames:
 
     # print(landing_trajectory.head())
 
-    axes.plot(landing_trajectory["landing_pad_position_y"] - landing_trajectory["iris_position_y"],
-              landing_trajectory["landing_pad_position_x"] - landing_trajectory["iris_position_x"],
-              landing_trajectory["iris_position_z"] - landing_trajectory["landing_pad_position_z"])
+    axes.plot(landing_trajectory["landing_pad_position_y"],landing_trajectory["landing_pad_position_x"],landing_trajectory["landing_pad_position_z"])
+
+    axes.plot(landing_trajectory["iris_position_y"], landing_trajectory["iris_position_x"], landing_trajectory["iris_position_z"])
+
+    distances.append(landing_trajectory["landing_pad_position_x"].iloc[-1] - landing_trajectory["landing_pad_position_x"].iloc[0])
 
     times.append(landing_trajectory.time.iloc[-1] - landing_trajectory.time.iloc[0])
     energies.append(landing_trajectory.energy_consumed.iloc[-1] - landing_trajectory.energy_consumed.iloc[0])
@@ -70,16 +74,19 @@ for filename in filenames:
         # elif( i == 0 ):
         #     end_time = segment.iloc[0].time
 
-    axes.view_init(elev=30, azim=40)
+    axes.view_init(elev=30, azim=20)
     axes.set_xlabel("East")
     axes.set_ylabel("North")
     axes.set_zlabel("Up")
 
     axes.set_xlim3d(-20, 20)
-    axes.set_ylim3d(-20, 20)
+    axes.set_ylim3d(0, 125)
+    axes.set_zlim3d(-0.1, 15)
 
-# plt.savefig("/home/joshua/Documents/radial_land_testing/figure.png", bbox_inches="tight", pad_inches=-0.2, transparent=True)
+plt.savefig("/home/joshua/Documents/moving_land_testing/figure_absolute.png", bbox_inches="tight", pad_inches=-0.2, transparent=True)
 # plt.show()
 
-print(numpy.mean(times))
-print(numpy.mean(energies))
+print(numpy.mean(times), numpy.std(times))
+print(numpy.mean(energies), numpy.std(energies))
+
+print(numpy.mean(distances), numpy.std(distances))

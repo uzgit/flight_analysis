@@ -9,7 +9,7 @@ from matplotlib.cbook import get_sample_data
 from matplotlib._png import read_png
 
 # get all logs
-log_directory = "/home/joshua/Documents/radial_land_testing (better)/*.csv"
+log_directory = "/home/joshua/Documents/linear_land_testing (initial)/*.csv"
 filenames = glob.glob(log_directory)
 
 print(filenames)
@@ -70,7 +70,7 @@ for filename in filenames:
         # elif( i == 0 ):
         #     end_time = segment.iloc[0].time
 
-    axes.view_init(elev=30, azim=40)
+    axes.view_init(elev=30, azim=20)
     axes.set_xlabel("East")
     axes.set_ylabel("North")
     axes.set_zlabel("Up")
@@ -78,8 +78,8 @@ for filename in filenames:
     axes.set_xlim3d(-20, 20)
     axes.set_ylim3d(-20, 20)
 
-# plt.savefig("/home/joshua/Documents/radial_land_testing/figure.png", bbox_inches="tight", pad_inches=-0.2, transparent=True)
+plt.savefig("/home/joshua/Documents/linear_land_testing (initial)/figure.png", bbox_inches="tight", pad_inches=-0.2, transparent=True)
 # plt.show()
 
-print(numpy.mean(times))
-print(numpy.mean(energies))
+print(numpy.mean(times), numpy.std(times))
+print(numpy.mean(energies), numpy.std(energies))

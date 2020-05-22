@@ -9,14 +9,14 @@ from matplotlib.cbook import get_sample_data
 from matplotlib._png import read_png
 
 # get all logs
-log_directory = "/home/joshua/Documents/radial_land_testing (better)/*.csv"
-filenames = glob.glob(log_directory)
+log_directory = "/home/joshua/Documents/yaw_pid_testing_east_0/"
+filenames = glob.glob(log_directory + "*.csv")
 
 print(filenames)
 
 # create 3d plot
-figure = plt.figure(figsize=(15, 11))
-axes = figure.gca(projection="3d")
+figure = plt.figure(figsize=(7, 4))
+axes = figure.gca()
 
 # plot landing pad
 # whycon_png = get_sample_data("/home/joshua/Pictures/whycon.png", asfileobj=True)
@@ -24,17 +24,17 @@ axes = figure.gca(projection="3d")
 # x, y = ogrid[0:img.shape[0], 0:img.shape[1]]
 # axes.plot_surface(x, y, 0, rstride=5, cstride=5, facecolors=img)
 
-fn = get_sample_data("/home/joshua/Pictures/whycon.png", asfileobj=True)
-img = read_png(fn)
-x, y = ogrid[0:img.shape[1], 0:img.shape[0]]
+# fn = get_sample_data("/home/joshua/Pictures/whycon.png", asfileobj=True)
+# img = read_png(fn)
+# x, y = ogrid[0:img.shape[1], 0:img.shape[0]]
 
-x = x.astype(float) / 225.0 - 0.5
-y = y.astype(float) / 225.0 - 0.5
+# x = x.astype(float) / 225.0 - 0.5
+# y = y.astype(float) / 225.0 - 0.5
 
 # ax = gca(projection='3d')
-axes.plot_surface(x, y, 0, rstride=5, cstride=5, facecolors=img)
+# axes.plot_surface(x, y, 0, rstride=5, cstride=5, facecolors=img)
 
-colors = ["black", "purple", "blue", "green", "yellow", "red"]
+# colors = ["black", "purple", "blue", "green", "yellow", "red"]
 
 times = []
 energies = []
@@ -51,9 +51,12 @@ for filename in filenames:
 
     # print(landing_trajectory.head())
 
-    axes.plot(landing_trajectory["landing_pad_position_y"] - landing_trajectory["iris_position_y"],
-              landing_trajectory["landing_pad_position_x"] - landing_trajectory["iris_position_x"],
-              landing_trajectory["iris_position_z"] - landing_trajectory["landing_pad_position_z"])
+    start_time = landing_trajectory["time"].iloc[0]
+    landing_trajectory["d_t"] = landing_trajectory["time"] - start_time
+    start_energy = landing_trajectory["energy_consumed"].iloc[0]
+    landing_trajectory["d_e"] = landing_trajectory["energy_consumed"] - start_energy
+
+    axes.plot(landing_trajectory["d_t"], landing_trajectory["yaw_displacement"])
 
     times.append(landing_trajectory.time.iloc[-1] - landing_trajectory.time.iloc[0])
     energies.append(landing_trajectory.energy_consumed.iloc[-1] - landing_trajectory.energy_consumed.iloc[0])
@@ -70,16 +73,18 @@ for filename in filenames:
         # elif( i == 0 ):
         #     end_time = segment.iloc[0].time
 
-    axes.view_init(elev=30, azim=40)
-    axes.set_xlabel("East")
-    axes.set_ylabel("North")
-    axes.set_zlabel("Up")
+    # axes.view_init(elev=30, azim=20)
+    axes.set_xlabel("Time (s)")
+    axes.set_ylabel("Yaw Displacement (rad)")
+    # axes.set_zlabel("Up")
 
-    axes.set_xlim3d(-20, 20)
-    axes.set_ylim3d(-20, 20)
+    axes.set_xlim(0, 10)
+    axes.set_ylim(-3, 3)
+    # axes.set_xlim3d(-20, 20)
+    # axes.set_ylim3d(-20, 20)
 
-# plt.savefig("/home/joshua/Documents/radial_land_testing/figure.png", bbox_inches="tight", pad_inches=-0.2, transparent=True)
+plt.savefig(log_directory + "figure.png", bbox_inches="tight", pad_inches=0.0, transparent=True)
 # plt.show()
 
-print(numpy.mean(times))
-print(numpy.mean(energies))
+print(numpy.mean(times), numpy.std(times))
+print(numpy.mean(energies), numpy.std(energies))
