@@ -3,8 +3,9 @@ import matplotlib.pyplot as plt
 import numpy
 import glob
 import pyquaternion
+import statsmodels.formula.api as smf
 
-from scipy.optimize import curve_fit
+from scipy.stats import linregress
 
 def func(x, a, b, c):
     return a * numpy.exp(b * x) + c
@@ -129,18 +130,71 @@ plots[error].set_ylabel("Pose Estimation Error (m)")
 plots[error].set_xlim(0, 12)
 plots[error].set_ylim(0, 15)
 
-coefficients = numpy.polyfit(all_data["true_displacement"], numpy.log(all_data["pose_estimation_error"]), 1)
-x_predicted = numpy.arange(0, 20, 0.1)
-y_predicted = numpy.exp(coefficients[1]) * numpy.exp(coefficients[0] * x_predicted)
+# slope, intercept, r_value, p_value, std_err = linregress(all_data["true_displacement"], numpy.log(all_data["pose_estimation_error"]))
+
+# x_predicted = numpy.arange(0, 20, 0.1)
+# y_predicted = numpy.exp(x_predicted * slope + intercept)
+# regression = plots[error].plot(x_predicted, y_predicted, linestyle="--", label=r"$y = e^{%0.3fx - %0.3f}$" % ( slope, numpy.abs(intercept) ) )
+# plt.legend()
+
+# coefficients = numpy.polyfit(all_data["true_displacement"], numpy.log(all_data["pose_estimation_error"]), 1)
+# x_predicted = numpy.arange(0, 20, 0.1)
+# y_predicted = numpy.exp(coefficients[1]) * numpy.exp(coefficients[0] * x_predicted)
 # plots[error].plot(x_predicted, y_predicted)
+
+# dataframe = pandas.DataFrame(columns=['y', 'x'])
+# dataframe["x"] =
+
+degree = 3
+weights = numpy.polyfit(all_data["true_displacement"], all_data["pose_estimation_error"], degree)
+model = numpy.poly1d(weights)
+# print(model.coeffs)
+results = smf.ols(formula="pose_estimation_error ~ model(true_displacement)", data=all_data[["true_displacement", "pose_estimation_error"]]).fit()
+
+str_label = r"$"
+for i in range(len(model.coefficients)):
+
+    coefficient = model.coeffs[i]
+    exponent = len(model.coeffs) - i - 1
+
+    if( i > 0 ):
+        if( coefficient > 0 ):
+            str_label += r"+"
+        else:
+            str_label += r"-"
+    elif( coefficient < 0 ):
+        str_label += r"-"
+
+    if( exponent > 1 ):
+        str_label += r"%0.3fx^%s" % ( numpy.abs(coefficient), exponent)
+    elif( exponent == 1 ):
+        str_label += r"%0.3fx" % (numpy.abs(coefficient))
+    elif( exponent == 0 ):
+        str_label += r"%0.3f" % (numpy.abs(coefficient))
+str_label += r", \sigma=%0.4f" % (results.bse["model(true_displacement)"])
+str_label += r"$"
+
+x = numpy.arange(0, 20, 0.1)
+plots[error].plot(x, model(x), label="")
+plots[error].set_title("Distance to April Tag Marker Versus Pose Estimation Error")
+# plots[error].legend()
+
+print(str_label)
+
+# print(dir(results))
+# print(type(results.bse))
+# print(results.bse["model(true_displacement)"])
+print(results.summary())
 
 # print("n_orig: %s" % len())
 print("n: %s" % len(all_data))
 
-print("x: %0.3f & %0.3f" % (numpy.nanmean(all_data["apriltag_estimated_position_x"]), numpy.nanstd(all_data["apriltag_estimated_position_x"])))
-print("y: %0.3f & %0.3f" % (numpy.nanmean(all_data["apriltag_estimated_position_y"]), numpy.nanstd(all_data["apriltag_estimated_position_y"])))
-print("z: %0.3f & %0.3f" % (numpy.nanmean(all_data["apriltag_estimated_position_z"]), numpy.nanstd(all_data["apriltag_estimated_position_z"])))
-
+# print("x: %0.3f & %0.3f" % (numpy.nanmean(all_data["apriltag_estimated_position_x"]), numpy.nanstd(all_data["apriltag_estimated_position_x"])))
+# print("y: %0.3f & %0.3f" % (numpy.nanmean(all_data["apriltag_estimated_position_y"]), numpy.nanstd(all_data["apriltag_estimated_position_y"])))
+# print("z: %0.3f & %0.3f" % (numpy.nanmean(all_data["apriltag_estimated_position_z"]), numpy.nanstd(all_data["apriltag_estimated_position_z"])))
+# print("e^(x*%s + %s" % ( slope, intercept ))
+# print("r^2: %s" % (r_value ** 2))
+# print("std_err: %s" % ( std_err ) )
 # popt, pcov = curve_fit(func, all_data["true_displacement"], numpy.log(all_data["pose_estimation_error"]), maxfev=1000, bounds=(0, [3., 1., 0.5]))
 # plots[error].plot(all_data["true_displacement"], func(all_data["true_displacement"], *popt))
 

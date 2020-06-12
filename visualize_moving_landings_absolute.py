@@ -80,7 +80,7 @@ for filename in filenames:
     axes.set_zlabel("Up")
 
     axes.set_xlim3d(-20, 20)
-    axes.set_ylim3d(0, 125)
+    axes.set_ylim3d(0, 300)
     axes.set_zlim3d(-0.1, 15)
 
 plt.savefig("/home/joshua/Documents/moving_land_testing/figure_absolute.png", bbox_inches="tight", pad_inches=-0.2, transparent=True)

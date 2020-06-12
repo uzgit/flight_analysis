@@ -9,7 +9,7 @@ from matplotlib.cbook import get_sample_data
 from matplotlib._png import read_png
 
 # get all logs
-log_directory = "/home/joshua/Documents/moving_land_testing/*.csv"
+log_directory = "/home/joshua/Documents/moving_land_testing_5ms/*.csv"
 filenames = glob.glob(log_directory)
 
 print(filenames)
@@ -52,7 +52,7 @@ for filename in filenames:
     # print(landing_trajectory.head())
 
     axes.plot(landing_trajectory["landing_pad_position_y"] - landing_trajectory["iris_position_y"],
-              landing_trajectory["landing_pad_position_x"] - landing_trajectory["iris_position_x"],
+              -landing_trajectory["landing_pad_position_x"] + landing_trajectory["iris_position_x"],
               landing_trajectory["iris_position_z"] - landing_trajectory["landing_pad_position_z"])
 
     times.append(landing_trajectory.time.iloc[-1] - landing_trajectory.time.iloc[0])
@@ -78,7 +78,7 @@ for filename in filenames:
     axes.set_xlim3d(-20, 20)
     axes.set_ylim3d(-20, 20)
 
-plt.savefig("/home/joshua/Documents/moving_land_testing/figure.png", bbox_inches="tight", pad_inches=-0.2, transparent=True)
+plt.savefig("/home/joshua/Documents/moving_land_testing_5ms/moving_land_testing_5mps.png", bbox_inches="tight", pad_inches=-0.2, transparent=True)
 # plt.show()
 
 print(numpy.mean(times), numpy.std(times))

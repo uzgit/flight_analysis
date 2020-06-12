@@ -2,7 +2,7 @@ import pandas
 import matplotlib.pyplot as plt
 import numpy
 import glob
-
+import statsmodels.formula.api as smf
 pandas.set_option('display.max_columns', None)
 
 from sklearn import datasets, linear_model
@@ -131,5 +131,38 @@ print("n: %s" % len(all_data))
 print("x: %s, %s" % (numpy.nanmean(all_data["whycon_estimated_position_x"]), numpy.nanstd(all_data["whycon_estimated_position_x"])))
 print("y: %s, %s" % (numpy.nanmean(all_data["whycon_estimated_position_y"]), numpy.nanstd(all_data["whycon_estimated_position_y"])))
 print("z: %s, %s" % (numpy.nanmean(all_data["whycon_estimated_position_z"]), numpy.nanstd(all_data["whycon_estimated_position_z"])))
+
+degree = 3
+weights = numpy.polyfit(all_data["true_displacement"], all_data["pose_estimation_error"], degree)
+model = numpy.poly1d(weights)
+# print(model.coeffs)
+results = smf.ols(formula="pose_estimation_error ~ model(true_displacement)", data=all_data[["true_displacement", "pose_estimation_error"]]).fit()
+
+str_label = r"$"
+for i in range(len(model.coefficients)):
+
+    coefficient = model.coeffs[i]
+    exponent = len(model.coeffs) - i - 1
+
+    if( i > 0 ):
+        if( coefficient > 0 ):
+            str_label += r"+"
+        else:
+            str_label += r"-"
+    elif( coefficient < 0 ):
+        str_label += r"-"
+
+    if( exponent > 1 ):
+        str_label += r"%0.3fx^%s" % ( numpy.abs(coefficient), exponent)
+    elif( exponent == 1 ):
+        str_label += r"%0.3fx" % (numpy.abs(coefficient))
+    elif( exponent == 0 ):
+        str_label += r"%0.3f" % (numpy.abs(coefficient))
+str_label += r", \sigma=%0.4f" % (results.bse["model(true_displacement)"])
+str_label += r"$"
+print(str_label)
+x = numpy.arange(2, 20, 0.1)
+plots[error].plot(x, model(x), label="")
+plots[error].set_title("Distance to WhyCon Marker Versus Pose Estimation Error")
 
 plt.show()

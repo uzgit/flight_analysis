@@ -4,6 +4,10 @@ import numpy
 import glob
 from squaternion import Quaternion
 
+import statsmodels.formula.api as smf
+
+from scipy.stats import linregress
+
 from scipy.optimize import curve_fit
 
 def func(x, a, b, c):
@@ -153,11 +157,12 @@ print("z: %0.3f & %0.3f" % (numpy.nanmean(all_data["apriltag_estimated_position_
 # popt, pcov = curve_fit(func, all_data["true_displacement"], numpy.log(all_data["pose_estimation_error"]), maxfev=1000, bounds=(0, [3., 1., 0.5]))
 # plots[error].plot(all_data["true_displacement"], func(all_data["true_displacement"], *popt))
 
-yaw_figure = plt.figure(figsize=(7,4))
-
 yaws = []
+abs_yaws = []
 for i in range(len(all_data)):
     yaw = Quaternion(all_data.iloc[i]["landing_pad_apriltag_global_pose_rotation_w"], all_data.iloc[i]["landing_pad_apriltag_global_pose_rotation_x"], all_data.iloc[i]["landing_pad_apriltag_global_pose_rotation_y"], all_data.iloc[i]["landing_pad_apriltag_global_pose_rotation_z"]).to_euler()[2]
+
+    abs_yaws.append(yaw)
 
     if( yaw < 0 ):
         yaw += 2 * numpy.pi
@@ -167,10 +172,10 @@ for i in range(len(all_data)):
 # yaws = numpy.abs(yaws)
 
 true_displacements = all_data["true_displacement"].to_numpy()
-print(true_displacements)
-print(yaws)
+# print(true_displacements)
+# print(yaws)
 
-print(len(true_displacements), len(yaws))
+# print(len(true_displacements), len(yaws))
 # print(len(yaws))
 # print(len(all_data))
 
@@ -178,11 +183,76 @@ print(len(true_displacements), len(yaws))
 # all_data = all_data.apply(get_yaw, axis=1)
 #
 # print(all_data["yaw"])
+yaw_figure = plt.figure(figsize=(7,4))
 yaw_figure.gca().scatter(true_displacements, yaws, s=5)
-# yaw_figure.gca().set_xlim(0, 12)
-# yaw_figure.gca().set_ylim(numpy.pi - 0.5, numpy.pi + 0.5)
+yaw_figure.gca().set_xlim(0, 12)
+yaw_figure.gca().set_ylim(numpy.pi - 0.5, numpy.pi + 0.5)
 yaw_figure.gca().set_xlabel("Distance (m)")
 yaw_figure.gca().set_ylabel("Estimated Yaw (rad)")
+
+yaw_error_figure = plt.figure(figsize=(7,4)).gca()
+yaw_errors = numpy.array(yaws) - numpy.pi
+yaw_error_figure.scatter(true_displacements, numpy.abs(yaw_errors), s=2)
+yaw_error_figure.set_xlim(0, 12)
+yaw_error_figure.set_ylim(-0.5, 0.5)
+yaw_error_figure.set_xlabel("Distance (m)")
+yaw_error_figure.set_ylabel("Estimated Yaw Error (rad)")
+
+# slope, intercept, r_value, p_value, std_err = linregress(true_displacements, numpy.abs(yaw_errors))
+
+coeff, cov = numpy.polyfit(true_displacements, numpy.abs(yaw_errors), 1, cov=True)
+
+print("cov: ", numpy.sqrt(numpy.diag(cov)))
+
+x_predicted = numpy.arange(0, 20, 0.1)
+y_predicted = numpy.polyval(coeff, x_predicted)
+# y_predicted = intercept + slope * x_predicted
+
+# print(x_predicted)
+# print(y_predicted)
+
+
+# print(coeff)
+# yaw_error_figure.plot(x_predicted, y_predicted, linestyle="--", color="red", label=r"y=$%0.5f \cdot x + %0.3f$" % (coeff[0], coeff[1]) )
+# print("std_err: %0.9f" % std_err)
+# plt.legend()
+
+# abs_yaw_figure
+
+dataframe = pandas.DataFrame(data={"true_displacement" : true_displacements, "abs_yaw_error" : numpy.abs(yaw_errors)})
+
+degree = 3
+weights = numpy.polyfit(dataframe["true_displacement"], dataframe["abs_yaw_error"], degree)
+model = numpy.poly1d(weights)
+# print(model.coeffs)
+results = smf.ols(formula="abs_yaw_error ~ model(true_displacement)", data=dataframe).fit()
+
+str_label = r"$"
+for i in range(len(model.coefficients)):
+
+    coefficient = model.coeffs[i]
+    exponent = len(model.coeffs) - i - 1
+
+    if( i > 0 ):
+        if( coefficient > 0 ):
+            str_label += r"+"
+        else:
+            str_label += r"-"
+    elif( coefficient < 0 ):
+        str_label += r"-"
+
+    if( exponent > 1 ):
+        str_label += r"%0.3fx^%s" % ( numpy.abs(coefficient), exponent)
+    elif( exponent == 1 ):
+        str_label += r"%0.3fx" % (numpy.abs(coefficient))
+    elif( exponent == 0 ):
+        str_label += r"%0.3f" % (numpy.abs(coefficient))
+str_label += r", \sigma=%0.4f" % (results.bse["model(true_displacement)"])
+str_label += r"$"
+print(str_label)
+x = numpy.arange(0, 12, 0.1)
+yaw_error_figure.plot(x, model(x), color="red", label="")
+yaw_error_figure.set_title("Distance to April Tag Marker Versus Yaw Estimation Error")
 
 print("n: %s" % len(yaws))
 print(" %0.3f +- %0.3f" % (numpy.mean(yaws), numpy.std(yaws)))

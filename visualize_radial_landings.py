@@ -9,7 +9,7 @@ from matplotlib.cbook import get_sample_data
 from matplotlib._png import read_png
 
 # get all logs
-log_directory = "/home/joshua/Documents/radial_land_testing (better)/*.csv"
+log_directory = "/home/joshua/Documents/radial_land_testing (initial)/*.csv"
 filenames = glob.glob(log_directory)
 
 print(filenames)
@@ -81,5 +81,5 @@ for filename in filenames:
 # plt.savefig("/home/joshua/Documents/radial_land_testing/figure.png", bbox_inches="tight", pad_inches=-0.2, transparent=True)
 # plt.show()
 
-print(numpy.mean(times))
-print(numpy.mean(energies))
+print(numpy.mean(times), numpy.std(times))
+print(numpy.mean(energies), numpy.std(energies))
